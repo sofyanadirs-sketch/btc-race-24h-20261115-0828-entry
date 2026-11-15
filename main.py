@@ -2,11 +2,11 @@
 
 The bot trades Coinbase Wrapped BTC (cbBTC) against USDC on 1-minute bars,
 long only, one position at a time, whole cash per trade. It watches the
-distance between the latest close and a 40-minute EMA of closes:
+distance between the latest close and a 50-minute EMA of closes:
 
   - BUY the full cash when the close sits at least 130 bps BELOW the EMA
     (a deep dip) and nothing is held.
-  - SELL the whole position when the close climbs back to at least 65 bps
+  - SELL the whole position when the close climbs back to at least 70 bps
     ABOVE the EMA (the dip has reverted past the mean).
   - SELL as well when the position is worth 150 bps less than its cost
     (stop-loss, a safety net; it never fired on the dev window).
@@ -21,14 +21,24 @@ thresholds (50-110 bps) catch falling knives and lose money after fees on
 this window (the previous race's EMA25/buy-70/sell-65 bot loses -$21.06
 here). Only deep dips that revert clear costs: buy 120-150 bps under a
 35-50 minute EMA and sell 55-90 bps over it is profitable across the whole
-neighbourhood (27 of 80 grid points positive), and EMA40 / buy 130 / sell
-65 sits in the middle of that region, so every immediate neighbour is
-profitable too (+$3.62 to +$11.84). The single dev trade: buy bar 824 at
-$63,526.62, sell bar 923 at $64,032.07, net +$7.15 on $1,000 (2 trades,
-max drawdown 1.37%).
+neighbourhood (27 of 80 grid points positive).
 
-Honest caveat: the dev profit comes from one round trip, so the race
-window may or may not offer a dip deep enough to trade. The gate only
+REVISED 2026-11-15 ~16:50 WIB (see REVISION.md): EMA 40 -> 50 and sell
+65 -> 70 bps. A fine sweep around the old point (EMA 30-50 x buy 120-150
+x sell 55-90) showed the slower EMA catches a second dip the old point
+missed, so this point makes TWO round trips in dev instead of one:
+buy bar 823 at $63,756.73, sell bar 945 at $64,330.29 (+$8.19); buy bar
+1001 at $62,879.01, sell bar 1058 at $63,101.94 (+$2.76); net +$10.95 on
+$1,000 (4 trades, max drawdown 1.58%). Neighbourhood: 21 of 27 immediate
+neighbours (EMA +/-5, buy +/-10, sell +/-10) stay positive, better than
+the old point's 19/27 — but NOT every neighbour: the worst is -$33.30
+(EMA55 / buy 120 / sell 60), so the earlier "every neighbour positive"
+claim was wrong and is corrected here. The point sits on a plateau
+(sell 70-80 and buy 130-140 all give +$10.95 to +$11.84), not an
+isolated spike.
+
+Honest caveat: the dev profit comes from two round trips, so the race
+window may or may not offer dips deep enough to trade. The gate only
 needs dev PnL above $0, which this clears with margin, and the guardrail
 needs at least 1 trade in the race window.
 
@@ -44,9 +54,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "ven
 import makefun_bars
 
 SYMBOL = "CBBTC"
-EMA_SPAN = 40        # minutes of closes in the EMA
+EMA_SPAN = 50        # minutes of closes in the EMA
 BUY_DIP_BPS = 130    # buy when the close is this far below the EMA
-SELL_BPS = 65        # sell when the close is this far above the EMA
+SELL_BPS = 70        # sell when the close is this far above the EMA
 STOP_LOSS_BPS = 150  # sell when the position is this far below its cost
 MAX_SLIPPAGE_BPS = 100
 
